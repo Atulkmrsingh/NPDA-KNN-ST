@@ -4,8 +4,8 @@ TGT_LANG=$1
 DS_TYPE=$2
 CUDA_IDS=$3
 
-DSTORE_ROOT=
-NNST_SCRIPTS=/path/to/KNN-ST/NNST
+DSTORE_ROOT=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/mustc2europarlst
+NNST_SCRIPTS=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/NNST
 
 declare -A dic
 dic=(

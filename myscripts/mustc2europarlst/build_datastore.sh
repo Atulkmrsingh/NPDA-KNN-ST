@@ -4,13 +4,13 @@ TGT_LANG=$1
 DS_TYPE=$2
 CUDA_IDS=$3
 
-DSTORE_ROOT=
-EUROPARL_ST_ROOT=
-ST_SAVE_DIR=
-CHECKPOINT_FILENAME=
-NNST_SCRIPTS=/KNN-ST/NNST
+DSTORE_ROOT=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/mustc2europarlst
+EUROPARL_ST_ROOT=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/prepare_data/data/s2t/europarl-st/v1.1/en
+ST_SAVE_DIR=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/pretrained/model
+CHECKPOINT_FILENAME=checkpoint_es.pt
+NNST_SCRIPTS=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/NNST
 
-VALID_SET="train_joint"
+VALID_SET="train_asr"
 if [ ${DS_TYPE} == "st_text" ]; then
     # Europarl-ST speech data
   DS_PATH=${DSTORE_ROOT}/ds_hidden_mapping_ep_st_data_text
@@ -35,14 +35,14 @@ mkdir "${DS_PATH}" -p
 
 CUDA_VISIBLE_DEVICES=${CUDA_IDS} \
 python3 ${NNST_SCRIPTS}/save_datastore.py \
-  ${EUROPARL_ST_ROOT}/${TGT_LANG} --config-yaml config_bilingual_unify_rep.yaml \
+  ${EUROPARL_ST_ROOT}/${TGT_LANG} --config-yaml config_asr.yaml \
   --task speech_to_text_joint_mt --valid-subset ${VALID_SET} --dataset-impl mmap \
   --path ${ST_SAVE_DIR}/${CHECKPOINT_FILENAME} \
   --max-tokens 50000 --decoder-embed-dim 256 --dstore-fp16 --dstore-size ${DS_SIZE} \
   --dstore-mmap ${DS_PATH} \
   --skip-invalid-size-inputs-valid-test \
   --generate-task-type ${GEN_TYPE} \
-  --model-overrides "{'load_pretrained_st_model_from': '/path/to/pretrained/st_model'}"
+  --model-overrides "{'load_pretrained_st_model_from': '/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/pretrained/model/mustc_es_st_transformer_s.pt'}"
 
 
 

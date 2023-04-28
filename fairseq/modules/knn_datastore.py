@@ -275,25 +275,35 @@ class KNN_Dstore(object):
         #     prob = prob.zero_().scatter_(dim=-1, index=max_idx.unsqueeze(-1), value=1)
 
     def retrieve(self, queries):
-
-        # queries  are [Batch, seq len, Hid Size]
-
-        # retrieve
+        start = time.time()
         bsz = queries.size(0)
-        seq_len = queries.size(1)
 
-        dists, knns = self.get_knns(queries.contiguous().view(-1, queries.size(-1)))  # [Batch * seq len, K]
-        # move retireval results to torch tensor from numpy, if faiss version < 1.6.5
-        # knns = torch.from_numpy(knns).to(queries.device)
-        # dists = torch.from_numpy(dists).to(queries.device)  # [Batch size * seq len, k]
+        # Normalize queries if using cosine similarity
+        if self.sim_func == 'recompute_ip':
+            queries = queries / queries.norm(dim=1, keepdim=True)
 
-        tgt_idx = self.vals[knns].to(queries.device).squeeze(-1)  # [Batch size * Seq len, K]
-        tgt_idx = tgt_idx.view(bsz, seq_len, -1)  # [B, S, K]
+        # Convert queries to numpy
+        queries = queries.detach().cpu().numpy().astype(np.float32)
 
-        dists = dists.view(bsz, seq_len, -1)  # [Batch, Seq len, k]
-        knns = knns.view(bsz, seq_len, -1)
+        # Perform radius-based search
+        radius = self.args.radius
+        nlist = self.index.ntotal // self.args.probe
+        lims, dists, idxs = self.index.range_search(queries, radius, nlist)
 
-        return {'distance': dists, 'knn_index': knns, 'tgt_index': tgt_idx}
+        # Remove padding in the output results
+        knn_index = []
+        tgt_index = []
+        distance = []
+        for i in range(bsz):
+            knn_indices = idxs[lims[i]:lims[i + 1]]
+            distances = dists[lims[i]:lims[i + 1]]
+
+            knn_index.append(torch.tensor(knn_indices, device=queries.device))
+            tgt_index.append(torch.tensor(self.dstore_tgt[knn_indices], device=queries.device))
+            distance.append(torch.tensor(distances, device=queries.device))
+
+
+        return {'distance': distance, 'knn_index': knn_index, 'tgt_index': tgt_index}
 
     def calculate_select_knn_prob(self,
                                   knn_index: torch.Tensor,  # [B, S, K]
@@ -353,43 +363,38 @@ class KNN_Dstore(object):
         #
         # return {'prob': prob}
 
-    def calculate_knn_prob(self,
-                           knn_index: torch.Tensor,  # [B, S, K]
-                           tgt_index: torch.Tensor,  # [B, S, K]
-                           distance: torch.Tensor,  # [B, S, K]
-                           queries: torch.Tensor,  # [B, S, H]
-                           temperature: torch.Tensor,  # [B, S, 1]
-                           ):
+def calculate_knn_prob(self,
+                       knn_index: List[torch.Tensor],
+                       tgt_index: List[torch.Tensor],
+                       distance: List[torch.Tensor],
+                       queries: torch.Tensor,
+                       temperature: torch.Tensor,
+                       ):
 
-        bsz = queries.size(0)
-        seq_len = queries.size(1)
+    bsz = queries.size(0)
+    seq_len = queries.size(1)
 
-        # update the dist and compute each neighbor weight, neg distance
-        re_compute_dists = self.dist_func(distance, knn_index, queries, function=self.sim_func)  # [B, S, K]
-
+    all_probs = []
+    for b in range(bsz):
+        # Calculate weights
+        re_compute_dists = self.dist_func(distance[b], knn_index[b], queries[b], function=self.sim_func)
         scaled_dists = re_compute_dists / temperature
-        knn_weight = torch.softmax(scaled_dists, dim=-1).unsqueeze(-1)  # [B, S, K, 1]
+        knn_weight = torch.softmax(scaled_dists, dim=-1).unsqueeze(-1)
 
-        # set the target index for each neighbor
-        # knn_tgt_prob = torch.zeros(bsz, seq_len, self.k, self.vocab_size).to(queries.device)  # [B, S, K, Vocab Size]
-        knn_tgt_prob = torch.zeros(bsz, seq_len, self.k, self.vocab_size, device=queries.device)  # [B, S, K, Vocab Size]
-        tgt_index = tgt_index.unsqueeze_(-1)  # [B, S, K, 1]
+        # Set the target index for each neighbor
+        knn_tgt_prob = torch.zeros(len(knn_index[b]), self.vocab_size, device=queries.device)
+        tgt_index_b = tgt_index[b].unsqueeze_(-1)
 
-        # implemented with pytorch_scatter
-        scatter(src=knn_weight.float(), out=knn_tgt_prob, index=tgt_index, dim=-1)
-        # knn_tgt_prob = knn_tgt_prob.scatter_(dim=-1, index=tgt_index, src=knn_weight.float())
-        # print('set the target prob for each neighbor (need do scatter operation for {} tensor), took {} s'.
-        #       format(knn_tgt_prob.size(), time.time() - start))
+        scatter(src=knn_weight.float(), out=knn_tgt_prob, index=tgt_index_b, dim=-1)
+        prob = knn_tgt_prob.sum(dim=-2)
 
-        prob = knn_tgt_prob.sum(dim=-2)  # [Batch Size, seq len, vocab size]
+        all_probs.append(prob)
 
-        # reimplement this with scatter add
-        # knn_tgt_prob = torch.zeros(bsz, seq_len, self.vocab_size).to(queries.device)  # [B, S, Vocab Size]
-        # tgt_index = tgt_index  # [B, S, K]
-        # knn_weight = knn_weight.squeeze(-1)
-        # scatter(src=knn_weight, )
+    # Stack all probabilities together
+    prob = torch.stack(all_probs, dim=0)
 
-        return {'prob': prob}
+    return {'prob': prob}
+
 
     def update_get_knn_seq_prob(self, queries):
 
@@ -410,6 +415,7 @@ class KNN_Dstore(object):
 
 if __name__ == "__main__":
     class ARGS:
+        radius = 0.5
         fp16 = False
         decoder_embed_dim = 1024
         k = 64

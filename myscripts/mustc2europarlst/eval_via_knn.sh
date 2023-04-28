@@ -7,13 +7,13 @@ temperature_value=$4
 lambda_value=$5
 k=$6
 
-DSTORE_ROOT=/path/to/datastore
-EUROPARL_ST_ROOT=/path/to/epst/data
+DSTORE_ROOT=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/mustc2europarlst
+EUROPARL_ST_ROOT=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/prepare_data/data/s2t/europarl-st/v1.1/en
 
-ST_SAVE_DIR=/path/to/save/model
-CHECKPOINT_FILENAME=/ckpt/name
+ST_SAVE_DIR=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/pretrained/model/
+CHECKPOINT_FILENAME=checkpoint_es.pt
 
-NNST_SCRIPTS=/path/to/KNN-ST/NNST
+NNST_SCRIPTS=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/NNST
 
 declare -A dic
 dic=(
@@ -46,7 +46,7 @@ echo "TGT_LANG:${TGT_LANG}, DS_TYPE:${DS_TYPE}, DS_PATH:${DS_PATH}, DS_SIZE:${DS
 
 CUDA_VISIBLE_DEVICES=${CUDA_IDS} \
   python3 ${NNST_SCRIPTS}/generate_knn.py \
-  ${EUROPARL_ST_ROOT}/${TGT_LANG} --config-yaml config_bilingual_unify_rep.yaml \
+  ${EUROPARL_ST_ROOT}/${TGT_LANG} --config-yaml config_asr.yaml \
   --gen-subset dev_joint --task speech_to_text_joint_mt \
   --path ${ST_SAVE_DIR}/${CHECKPOINT_FILENAME} \
   --batch-size 64 --beam 5 --scoring sacrebleu \
@@ -54,5 +54,5 @@ CUDA_VISIBLE_DEVICES=${CUDA_IDS} \
 'dstore_size': ${DS_SIZE}, 'dstore_fp16': True, 'k': ${k}, 'probe': 64, 'knn_sim_func': 'do_not_recomp_l2',
 'use_gpu_to_search': True, 'move_dstore_to_mem': True, 'no_load_keys': True, 'knn_lambda_type': 'fix',
 'knn_lambda_value': ${lambda_value}, 'knn_temperature_type': 'fix', 'knn_temperature_value': ${temperature_value},
-'load_pretrained_st_model_from': '/path/to/mustc_de_st_transformer_s.pt'}" \
+'load_pretrained_st_model_from': '/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/pretrained/model/mustc_es_st_transformer_s.pt'}" \
   --generate-task-type st --quiet
