@@ -1,3 +1,7 @@
+Paper link: https://arxiv.org/pdf/2205.11211.pdf
+
+Changes: Replacing kNN with rKNN with radius 0.5 on en-es dataset
+
 # NPDA-kNN-ST
 Official implementation of EMNLP'2022 paper "Non-Parametric Domain Adaptation for End-to-end Speech Translation".
 
