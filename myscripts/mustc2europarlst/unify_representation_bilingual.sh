@@ -2,7 +2,7 @@ TGT_LANG=$1
 CUDA_IDS=$2
 
 MUSTC_ROOT=/path/to/mustc/data
-PRETRAIN_ST_MODEL=/path/to/mustc_st_transformer_s.pt # download from https://github.com/facebookresearch/fairseq/blob/main/examples/speech_to_text/docs/mustc_example.md
+PRETRAIN_ST_MODEL=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/pretrained/model/mustc_es_st_transformer_s.pt # download from https://github.com/facebookresearch/fairseq/blob/main/examples/speech_to_text/docs/mustc_example.md
 ST_SAVE_DIR=/path/to/save/model
 mkdir $ST_SAVE_DIR -p
 

@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 
-SCRIPTS=/toolkit/mosesdecoder/scripts
+SCRIPTS=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/prepare_data/toolkit/mosesdecoder/scripts
 TOKENIZER=$SCRIPTS/tokenizer/tokenizer.perl
 CLEAN=$SCRIPTS/training/clean-corpus-n.perl
 NORM_PUNC=$SCRIPTS/tokenizer/normalize-punctuation.perl
 REM_NON_PRINT_CHAR=$SCRIPTS/tokenizer/remove-non-printing-char.perl
-BPEROOT=/toolkit/subword-nmt/subword_nmt
+BPEROOT=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/prepare_data/toolkit/subword-nmt/subword_nmt
 BPE_TOKENS=40000
 
 
 
-EP_MT_ROOT=path/to/europarl/v7/filted_by_st
 
-python3 ./prep_europarlmt_data.py
+
+EP_MT_ROOT=/home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/prepare_data/data/europarl/v7/filted_by_st
+
+# python3 /home/ganesh/Desktop/Goat-for-Bli/goat-for-bli/NPDA-KNN-ST/myscripts/prepare_data/prep_europarlmt_data.py
 
 for src in "en"; do
-    for tgt in "de" "fr" "es" "nl" "ro" "pt" "it" ; do
+    for tgt in "es" ; do
         lang=$src-$tgt
 
         echo "######################################### preprocess ${src}-${tgt} #########################################"
