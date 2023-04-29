@@ -1,9 +1,21 @@
 # NPDA-kNN-ST
+Team members:
+Atul Kumar Singh(22m0823)
+Vishal Tapase(22m807)
+Yashwant singh parihar(22m0798)
+Sourabh kumar(22m0802)
 Implementation of EMNLP'2022 paper "Non-Parametric Domain Adaptation for End-to-end Speech Translation".
 
 Paper link: https://arxiv.org/pdf/2205.11211.pdf
 
 Changes: Replacing kNN with rKNN with radius 0.5 on en-es dataset. Because RKNN uses a reduced set of training data to speed up the classification process. RKNN is useful in this case because data is high-dimensional and dataset size is very large and there are concerns about the memory requirements of the KNN algorithm. We have also used knn w.r.t cosine-similarity.
+
+Training:
+We trained using EuropalST dataset on the Fairseq S2T MuST-C predefined model and saved the key and value pair.
+
+Inference:
+We were facing the environment issue in the inference part. Omegaconf is throwing error due to its mismatch with the python version 3.11. We had changed the inference code in knnDatastore file but facing the issue in the environment variable.
+
 
 # Flow
 
